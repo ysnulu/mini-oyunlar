@@ -15,8 +15,11 @@ if (Get-Process Unity -ErrorAction SilentlyContinue) {
 $kilit = Join-Path $proje "Temp\UnityLockfile"
 if (Test-Path $kilit) { Remove-Item $kilit -Force -ErrorAction SilentlyContinue }
 
+# -burst-disable-compilation: Burst derleyici sunucusu batchmode'da cokuyor ve bu projede
+# Jobs/Burst kullanilmiyor; kapatinca hem cokme gidiyor hem calisma hizlaniyor.
 $argler = @("-batchmode", "-nographics", "-projectPath", "`"$proje`"", "-runTests",
-            "-testPlatform", "EditMode", "-testResults", "`"$sonuc`"", "-logFile", "`"$log`"")
+            "-testPlatform", "EditMode", "-testResults", "`"$sonuc`"", "-logFile", "`"$log`"",
+            "-burst-disable-compilation")
 $surec = Start-Process -FilePath $unity -ArgumentList $argler -Wait -PassThru -NoNewWindow
 $kod = $surec.ExitCode
 

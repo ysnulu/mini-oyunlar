@@ -9,6 +9,10 @@ UnityProject/[Uu]serSettings/
 UnityProject/[Mm]emoryCaptures/
 UnityProject/[Rr]ecordings/
 
+# Performance Testing paketinin test kosusunda urettigi cop (Resources klasorunu kullanmiyoruz)
+UnityProject/Assets/Resources/
+UnityProject/Assets/Resources.meta
+
 # IDE
 .vs/
 .idea/

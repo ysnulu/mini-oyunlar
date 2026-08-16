@@ -35,8 +35,10 @@ function Tirnakla([string]$deger) {
     return $deger
 }
 
+# -burst-disable-compilation: Burst derleyicisi batchmode'da cokebiliyor; bu projede
+# Jobs/Burst kullanilmiyor. Burst gerektiren bir oyun yazilirsa bu satir kaldirilir.
 $argler = @(
-    "-batchmode", "-quit", "-nographics",
+    "-batchmode", "-quit", "-nographics", "-burst-disable-compilation",
     "-projectPath", (Tirnakla $proje),
     "-logFile", (Tirnakla $Log),
     "-executeMethod", $Metot
@@ -53,7 +55,8 @@ $kod = $surec.ExitCode
 $sure = [int]((Get-Date) - $baslangic).TotalSeconds
 
 if (Test-Path $Log) {
-    $onemli = Select-String -Path $Log -Pattern "error CS|\[ULU\]|Build Failed|BuildFailedException|Unhandled Exception|No valid Unity Editor license|Licensing" |
+    # Lisans/telemetri gurultusu haric, ise yarayan satirlar.
+    $onemli = Select-String -Path $Log -Pattern "error CS|\[ULU\]|Build Failed|BuildFailedException|Unhandled Exception|No valid Unity Editor license" |
               Select-Object -Last 25
     foreach ($satir in $onemli) { Write-Host ("  " + $satir.Line.Trim()) }
 }
