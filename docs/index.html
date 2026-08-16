@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mini Oyunlar</title>
+<style>
+  :root {
+    --gece: #12141d;
+    --kart: #1b1f2c;
+    --kenar: #2a3042;
+    --yazi: #eef1f8;
+    --soluk: #98a0b5;
+    --vurgu: #40dbd1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 2.5rem 1.25rem 4rem;
+    background: var(--gece);
+    color: var(--yazi);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+  }
+  header { max-width: 960px; margin: 0 auto 2.5rem; }
+  h1 { font-size: clamp(1.9rem, 5vw, 2.8rem); margin: 0 0 .4rem; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--soluk); }
+  main { max-width: 960px; margin: 0 auto; }
+  .liste { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .kart {
+    display: block;
+    background: var(--kart);
+    border: 1px solid var(--kenar);
+    border-radius: 14px;
+    padding: 1.15rem 1.25rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .kart:hover { border-color: var(--vurgu); transform: translateY(-2px); }
+  .kart h2 { margin: 0 0 .35rem; font-size: 1.25rem; }
+  .kart p { margin: 0 0 .8rem; color: var(--soluk); font-size: .95rem; min-height: 2.6em; }
+  .kart span { font-size: .8rem; color: var(--vurgu); }
+  .bos { color: var(--soluk); }
+  footer { max-width: 960px; margin: 3rem auto 0; color: var(--soluk); font-size: .85rem; }
+  footer a { color: var(--vurgu); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Mini Oyunlar</h1>
+  <p>Unity ile yapılmış küçük 2D oyunlar. Tarayıcıda açılır, kurulum yok — telefonda da oynanır.</p>
+</header>
+
+<main>
+  <div class="liste" id="liste"><p class="bos">Yükleniyor…</p></div>
+</main>
+
+<footer>
+  Yasin Ulu · kaynak kod: <a href="https://github.com/ysnulu/mini-oyunlar">github.com/ysnulu/mini-oyunlar</a>
+</footer>
+
+<script>
+fetch('./oyunlar.json?v=' + Date.now())
+  .then(function (y) { return y.ok ? y.json() : []; })
+  .then(function (oyunlar) {
+    var liste = document.getElementById('liste');
+    if (!oyunlar || !oyunlar.length) {
+      liste.innerHTML = '<p class="bos">Henüz yayınlanmış oyun yok.</p>';
+      return;
+    }
+    liste.innerHTML = oyunlar.map(function (o) {
+      return '<a class="kart" href="./' + o.slug + '/">' +
+             '<h2>' + kacir(o.ad) + '</h2>' +
+             '<p>' + kacir(o.aciklama || '') + '</p>' +
+             '<span>Oyna →</span></a>';
+    }).join('');
+  })
+  .catch(function () {
+    document.getElementById('liste').innerHTML = '<p class="bos">Oyun listesi okunamadı.</p>';
+  });
+
+function kacir(m) {
+  return String(m).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  });
+}
+</script>
+</body>
+</html>

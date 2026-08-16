@@ -1,0 +1,38 @@
+# Unity'nin urettigi, depoya girmemesi gereken klasorler
+UnityProject/[Ll]ibrary/
+UnityProject/[Tt]emp/
+UnityProject/[Oo]bj/
+UnityProject/[Bb]uild/
+UnityProject/[Bb]uilds/
+UnityProject/[Ll]ogs/
+UnityProject/[Uu]serSettings/
+UnityProject/[Mm]emoryCaptures/
+UnityProject/[Rr]ecordings/
+
+# IDE
+.vs/
+.idea/
+*.csproj
+*.sln
+*.unityproj
+*.user
+*.pidb
+*.booproj
+*.svd
+*.suo
+
+# tools ciktilari
+tools/son-log.txt
+tools/test-sonuc.xml
+tools/*.log
+
+# Isletim sistemi
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Crash kayitlari
+sysinfo.txt
+*.stackdump
+crashlytics-build.properties

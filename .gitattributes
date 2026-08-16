@@ -1,0 +1,21 @@
+* text=auto
+
+# Unity metin varliklari
+*.cs        text diff=csharp
+*.unity     text
+*.asset     text
+*.prefab    text
+*.meta      text
+*.asmdef    text
+*.json      text
+
+# WebGL derleme ciktilari (docs/ altinda) ikili dosyadir
+*.wasm      binary
+*.data      binary
+*.unityweb  binary
+*.br        binary
+*.gz        binary
+*.png       binary
+*.jpg       binary
+*.mp3       binary
+*.ogg       binary
