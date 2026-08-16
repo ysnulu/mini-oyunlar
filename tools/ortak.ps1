@@ -4,9 +4,12 @@ function Get-Kok { Split-Path -Parent $PSScriptRoot }
 
 # C# tarafindaki YapiCLI.Slug ile ayni sonucu uretir (klasor adi -> URL parcasi).
 function Slugla([string]$ad) {
-    $harita = @{ 'ç'='c'; 'Ç'='c'; 'ğ'='g'; 'Ğ'='g'; 'ı'='i'; 'İ'='i'; 'ö'='o'; 'Ö'='o'; 'ş'='s'; 'Ş'='s'; 'ü'='u'; 'Ü'='u' }
-    $s = $ad
-    foreach ($k in $harita.Keys) { $s = $s.Replace($k, $harita[$k]) }
+    # Not: PowerShell hash tablosu anahtarlari buyuk/kucuk harf ayirmaz ('ç' ile 'Ç' cakisir),
+    # bu yuzden .NET'in buyuk/kucuk duyarli Replace'i sirayla kullaniliyor.
+    # Ayrica 'İ' once elle cevriliyor: ToLowerInvariant onu "i + birlestirici nokta" yapiyor.
+    $s = $ad.Replace('ç','c').Replace('Ç','c').Replace('ğ','g').Replace('Ğ','g').
+             Replace('ı','i').Replace('İ','i').Replace('ö','o').Replace('Ö','o').
+             Replace('ş','s').Replace('Ş','s').Replace('ü','u').Replace('Ü','u')
     $s = $s.ToLowerInvariant()
     $cikti = ""
     foreach ($c in $s.ToCharArray()) {

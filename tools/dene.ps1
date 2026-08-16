@@ -27,8 +27,15 @@ if (-not (Test-Path (Join-Path $dizin "$slug\index.html"))) {
 # Zaten calisan sunucu varsa yenisini acma.
 $mevcut = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
 if (-not $mevcut) {
-    Start-Process -FilePath "python" -ArgumentList @("-m", "http.server", "$Port", "--directory", $dizin) -WindowStyle Minimized
-    Start-Sleep -Milliseconds 800
+    $python = if (Get-Command py -ErrorAction SilentlyContinue) { "py" } else { "python" }
+    # Yolda bosluk var; Start-Process argumanlari tirnaklamadan birlestirdigi icin tirnagi biz koyuyoruz.
+    Start-Process -FilePath $python -ArgumentList @("-m", "http.server", "$Port", "--directory", "`"$dizin`"") -WindowStyle Minimized
+    Start-Sleep -Seconds 2
+
+    if (-not (Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)) {
+        Write-Host "HATA: yerel sunucu $Port portunda acilmadi." -ForegroundColor Red
+        exit 1
+    }
 }
 
 $adres = "http://localhost:$Port/$slug/"
