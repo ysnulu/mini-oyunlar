@@ -19,8 +19,8 @@ public class OruntuBootstrap : OyunTabani
     protected override Color ArkaPlan => new Color(0.055f, 0.065f, 0.105f);
     protected override float KameraBoyu => 5f;
 
-    static readonly Color[] Palet = { Renk.Turkuaz, Renk.Mavi, Renk.Mor, Renk.Pembe, Renk.Sari };
-    static readonly float[] BoyutOlcek = { 0.52f, 0.76f, 1.0f };
+    static readonly Color[] Palet = OruntuAyar.Palet;
+    static readonly float[] BoyutOlcek = OruntuAyar.BoyutOlcek;
     static readonly Ozellik[] TumOzellikler =
         { Ozellik.Sekil, Ozellik.Renk, Ozellik.Boyut, Ozellik.Donme, Ozellik.Adet };
     static readonly string[] OzellikAdi = { "şekil", "renk", "boyut", "dönme", "adet" };
@@ -30,6 +30,7 @@ public class OruntuBootstrap : OyunTabani
     const float KaroAralik = 1.85f;
     const float SecenekAralik = 2.4f;
     const float KaroYari = 0.85f;
+    static readonly Vector3 GeriKonum = new Vector3(-4.6f, 3.3f, 0f);
 
     enum Asama { BolumSec, Soru, Bekle }
 
@@ -39,6 +40,8 @@ public class OruntuBootstrap : OyunTabani
     Ozellik? odak;              // öğretmen modu: yalnızca bu özellik değişir
     float bekleme;
     bool sonrakiSecime;         // bekleme bitince seçim tahtasına dön
+    int zorlukKaydirma;         // bölüm tabanının üstüne/altına uyarlanır sapma
+    int ustusteDogru;
 
     Dictionary<Ozellik, OruntuAyar.Kural> kurallar;
     Ozellik[] aktif;
@@ -63,7 +66,8 @@ public class OruntuBootstrap : OyunTabani
     protected override void Kur()
     {
         ustBilgi = Arayuz.Yazi(Ekran.transform, "", 26, Kose.Ust, new Vector2(0f, 56f), Renk.Gri, new Vector2(1240f, 70f));
-        altBilgi = Arayuz.Yazi(Ekran.transform, "", 24, Kose.Alt, new Vector2(0f, 30f), Renk.Gri, new Vector2(1240f, 60f));
+        // İki satırlık olabilir: "seçtiğin nerede saptı" + "kural neydi".
+        altBilgi = Arayuz.Yazi(Ekran.transform, "", 24, Kose.Alt, new Vector2(0f, 44f), Renk.Gri, new Vector2(1240f, 92f));
     }
 
     protected override void Basla()
@@ -177,6 +181,8 @@ public class OruntuBootstrap : OyunTabani
         can = OruntuAyar.Can;
         soruNo = 0;
         bolumHatasi = 0;
+        zorlukKaydirma = 0;
+        ustusteDogru = 0;
         System.Array.Clear(bolumDogru, 0, bolumDogru.Length);
         System.Array.Clear(bolumSoru, 0, bolumSoru.Length);
         Ses.Basla();
@@ -186,39 +192,14 @@ public class OruntuBootstrap : OyunTabani
     void SoruUret()
     {
         asama = Asama.Soru;
-        var ayar = OruntuAyar.Bolum(bolum);
-        List<Oge> liste = null;
-        Oge dogru = default;
 
-        // Emniyet: seçeneklerden ikisi ekranda aynı görünüyorsa ya da dizi hiç değişmiyorsa
-        // soru çözülemez demektir — yeniden üret.
-        for (int deneme = 0; deneme < 12; deneme++)
-        {
-            aktif = odak.HasValue ? new[] { odak.Value } : OruntuAyar.AktifOzellikler(bolum);
-            kurallar = OruntuAyar.KurallariUret(aktif);
-
-            dizi = new Oge[ayar.diziUzunlugu];
-            for (int i = 0; i < dizi.Length; i++) dizi[i] = OruntuAyar.OgeUret(kurallar, i);
-
-            gizliIndex = ayar.ortadanSor && !odak.HasValue ? Random.Range(1, dizi.Length - 1) : dizi.Length - 1;
-
-            dogru = dizi[gizliIndex];
-            var onceki = dizi[Mathf.Max(0, gizliIndex - 1)];
-            var celdirici = OruntuAyar.Celdiriciler(dogru, onceki, aktif, ayar.inceCeldirici, kurallar);
-
-            liste = new List<Oge>(celdirici) { dogru };
-
-            bool diziDegisiyor = !OruntuAyar.AyirtEdilemezVar(new[] { dizi[0], dizi[1] });
-            if (!OruntuAyar.AyirtEdilemezVar(liste) && diziDegisiyor) break;
-        }
-
-        for (int i = liste.Count - 1; i > 0; i--)
-        {
-            int j = Random.Range(0, i + 1);
-            (liste[i], liste[j]) = (liste[j], liste[i]);
-        }
-        secenekler = liste.ToArray();
-        dogruSecenek = System.Array.FindIndex(secenekler, s => s.Ayni(dogru));
+        var soru = OruntuAyar.SoruUret(bolum, zorlukKaydirma, odak);
+        aktif = soru.aktif;
+        kurallar = soru.kurallar;
+        dizi = soru.dizi;
+        gizliIndex = soru.gizli;
+        secenekler = soru.secenekler;
+        dogruSecenek = soru.dogru;
 
         SoruCiz();
         BilgiTazele();
@@ -228,12 +209,22 @@ public class OruntuBootstrap : OyunTabani
 
     void CevapGirdisi()
     {
+        if (Girdi.GeriBasildi) { Girdi.Tuket(); SecimeDon(); return; }
+
         for (int i = 0; i < secenekler.Length; i++)
             if (Girdi.SayiBasildi(i + 1)) { Cevapla(i); return; }
 
         if (!Girdi.Onayla) return;
 
         var d = Girdi.DunyaNoktasi(Kam);
+
+        if (Mathf.Abs(d.x - GeriKonum.x) < 0.82f && Mathf.Abs(d.y - GeriKonum.y) < 0.42f)
+        {
+            Girdi.Tuket();
+            SecimeDon();
+            return;
+        }
+
         for (int i = 0; i < secenekler.Length; i++)
         {
             var merkez = SecenekKonum(i);
@@ -258,6 +249,10 @@ public class OruntuBootstrap : OyunTabani
             if (dogru) { bolumDogru[(int)o]++; oturumDogru[(int)o]++; }
         }
 
+        // Öğretmen modu tek özelliği izole etmek için var; zorluğu orada oynatmak amacı bozar.
+        if (!odak.HasValue)
+            zorlukKaydirma = OruntuAyar.KaydirmayiGuncelle(zorlukKaydirma, ref ustusteDogru, dogru);
+
         if (dogru)
         {
             secenekArka[secim].color = new Color(0.25f, 0.65f, 0.40f);
@@ -274,9 +269,11 @@ public class OruntuBootstrap : OyunTabani
             can--;
             bolumHatasi++;
             Ses.Carpma();
+            FarkiIsaretle(secim);
             altBilgi.color = Renk.Turuncu;
-            altBilgi.text = "Kural: " + OruntuAyar.KuralAciklamasi(kurallar, aktif);
-            bekleme = 2.6f;
+            altBilgi.text = "Seçtiğin: " + OruntuAyar.FarkAciklamasi(secenekler[secim], secenekler[dogruSecenek])
+                          + "\nKural: " + OruntuAyar.KuralAciklamasi(kurallar, aktif);
+            bekleme = 3.2f;
         }
 
         // Eksik karonun yerine doğrusunu koy (katman 4: boş çerçevenin üstünde kalsın).
@@ -287,6 +284,23 @@ public class OruntuBootstrap : OyunTabani
         asama = Asama.Bekle;
         sonrakiSecime = false;
         if (can <= 0) bekleme = Mathf.Max(bekleme, 2.6f);
+    }
+
+    /// <summary>
+    /// Yanlış seçimin altına uymayan özelliklerin adını yazar. Amaç "yanlış" demek değil,
+    /// nerede saptığını göstermek: öğrenci hangi özelliği okumadığını görsün.
+    /// </summary>
+    void FarkiIsaretle(int secim)
+    {
+        var farklar = OruntuAyar.Farklar(secenekler[secim], secenekler[dogruSecenek]);
+        var adlar = new List<string>();
+        foreach (var o in farklar) adlar.Add(OzellikAdi[(int)o]);
+        if (adlar.Count > 2) adlar.RemoveRange(2, adlar.Count - 2);
+
+        // Karonun üstüne yazılır: altta seçenek numarası ve iki satırlık alt bilgi var.
+        YaziEkle(string.Join(" · ", adlar) + " uymuyor",
+                 SecenekKonum(secim) + new Vector3(0f, 1.15f, 0f), 18, Renk.Kirmizi);
+        YaziEkle("doğrusu", SecenekKonum(dogruSecenek) + new Vector3(0f, 1.15f, 0f), 18, Renk.Yesil);
     }
 
     void Devam()
@@ -349,8 +363,13 @@ public class OruntuBootstrap : OyunTabani
         string baslik = odak.HasValue
             ? $"Öğretmen modu: {OzellikAdi[(int)odak.Value]}"
             : $"Bölüm {bolum}/{OruntuAyar.ToplamBolum}";
+        // Kaç özelliğin değiştiğini yazmıyoruz (soruyu ele verir); yalnızca zorluğun kaydığını.
+        string zorluk = odak.HasValue || zorlukKaydirma == 0
+            ? ""
+            : zorlukKaydirma > 0 ? "   ·   zorluk: yüksek" : "   ·   zorluk: düşük";
+
         ustBilgi.color = Renk.Gri;
-        ustBilgi.text = $"{baslik}   ·   Soru {gosterilenSoru}/{OruntuAyar.SoruSayisi}   ·   Can {Mathf.Max(0, can)}";
+        ustBilgi.text = $"{baslik}   ·   Soru {gosterilenSoru}/{OruntuAyar.SoruSayisi}   ·   Can {Mathf.Max(0, can)}{zorluk}";
     }
 
     /// <summary>"dönme 2/3 · renk 5/5" biçiminde özellik bazlı doğruluk dökümü.</summary>
@@ -412,6 +431,10 @@ public class OruntuBootstrap : OyunTabani
                 KaroCiz(dizi[i], konum, kok, Renk.Duman);
             }
         }
+
+        // Bölüm ortasında çıkış: dizinin sol üstünde durur, dizinin kendisini kapatmaz.
+        Nesne("Geri", Cizim.YuvarlakKare(new Color(0.14f, 0.16f, 0.23f), 96, 48, 0.4f), GeriKonum, 1.1f, 0, kok);
+        YaziEkle("Tahta (Q)", GeriKonum, 18, Renk.Gri);
 
         secenekArka = new SpriteRenderer[secenekler.Length];
         for (int i = 0; i < secenekler.Length; i++)

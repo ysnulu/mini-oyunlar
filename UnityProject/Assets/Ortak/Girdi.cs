@@ -27,6 +27,10 @@ namespace Ulu
         public static bool DuraklatBasildi =>
             !Tuketildi && (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P));
 
+        /// <summary>Bir üst ekrana dön (bölüm seçme, harita vb.). Duraklatmadan ayrı tutulur.</summary>
+        public static bool GeriBasildi =>
+            !Tuketildi && (Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.Q));
+
         public static bool SolaBasildi =>
             !Tuketildi && (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow) ||
                            (Input.GetMouseButtonDown(0) && SolYarim));

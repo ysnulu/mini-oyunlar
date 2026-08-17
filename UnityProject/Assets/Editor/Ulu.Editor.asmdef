@@ -2,7 +2,8 @@
     "name": "Ulu.Editor",
     "rootNamespace": "Ulu.Duzenleyici",
     "references": [
-        "Ulu.Ortak"
+        "Ulu.Ortak",
+        "Ulu.Oruntu"
     ],
     "includePlatforms": [
         "Editor"

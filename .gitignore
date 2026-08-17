@@ -31,6 +31,9 @@ tools/son-durum.txt
 tools/test-sonuc.xml
 tools/*.log
 
+# Uretilen calisma kagitlari (tools/oruntu-kagit.ps1) - her seferinde yeniden uretilir
+kagitlar/
+
 # Isletim sistemi
 Thumbs.db
 ehthumbs.db

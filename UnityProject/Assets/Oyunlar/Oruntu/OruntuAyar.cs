@@ -23,6 +23,13 @@ public static class OruntuAyar
     public static readonly string[] RenkAdi = { "turkuaz", "mavi", "mor", "pembe", "sarı" };
     public static readonly string[] BoyutAdi = { "küçük", "orta", "büyük" };
 
+    /// <summary>Karo renkleri. Ekran ve çalışma kâğıdı aynı paleti kullansın diye burada.</summary>
+    public static readonly Color[] Palet =
+        { Ulu.Renk.Turkuaz, Ulu.Renk.Mavi, Ulu.Renk.Mor, Ulu.Renk.Pembe, Ulu.Renk.Sari };
+
+    /// <summary>Boyut basamaklarının ölçek karşılığı (küçük → büyük).</summary>
+    public static readonly float[] BoyutOlcek = { 0.52f, 0.76f, 1.0f };
+
     public struct Oge
     {
         public int sekil, renk, boyut, donme, adet;
@@ -101,15 +108,23 @@ public static class OruntuAyar
     public static bool DonmeGorunmez(int sekil) => sekil == 0 || sekil == 4;
 
     /// <summary>
-    /// Karonun ekranda göründüğü hâlin kimliği. İki karo aynı anahtara sahipse öğrenci için
-    /// ayırt edilemezler — dönme, şeklin simetrisine göre sadeleştirilir (kare 90°'de kendine
-    /// eşittir, daire/halka her açıda). Soru üretimi bu anahtarla doğrulanır.
+    /// Bir özelliğin ekranda görünen değeri. Dönme, şeklin simetrisine göre sadeleştirilir:
+    /// daire/halka her açıda aynıdır, kare 90°'de kendine eşittir. Ham değerle karşılaştırma
+    /// yapmak "farklı ama aynı görünen" karolar üretir.
     /// </summary>
-    public static string GorselAnahtar(Oge o)
+    public static int GorunenDeger(Ozellik o, Oge k)
     {
-        int donme = DonmeGorunmez(o.sekil) ? 0 : (o.sekil == 1 ? o.donme % 2 : o.donme);
-        return $"{o.sekil}-{o.renk}-{o.boyut}-{o.adet}-{donme}";
+        if (o != Ozellik.Donme) return k[o];
+        if (DonmeGorunmez(k.sekil)) return 0;
+        return k.sekil == 1 ? k.donme % 2 : k.donme;
     }
+
+    /// <summary>
+    /// Karonun ekranda göründüğü hâlin kimliği. İki karo aynı anahtara sahipse öğrenci için
+    /// ayırt edilemezler. Soru üretimi bu anahtarla doğrulanır.
+    /// </summary>
+    public static string GorselAnahtar(Oge o) =>
+        $"{o.sekil}-{o.renk}-{o.boyut}-{o.adet}-{GorunenDeger(Ozellik.Donme, o)}";
 
     /// <summary>Listedeki karolardan ikisi ekranda aynı görünüyor mu?</summary>
     public static bool AyirtEdilemezVar(IList<Oge> ogeler)
@@ -144,14 +159,41 @@ public static class OruntuAyar
         };
     }
 
+    // --- uyarlanır zorluk ---
+
+    /// <summary>Üst üste bu kadar doğrudan sonra bir özellik daha devreye girer.</summary>
+    public const int UyumEsigi = 2;
+
+    /// <summary>Kaydırmanın sınırları: bölüm tabanının bir üstü, bir altı.</summary>
+    public const int UyumEnCok = 1;
+    public const int UyumEnAz = -1;
+
+    /// <summary>Bölüm tabanı + oyun içi kaydırma. Soru üretimi bunu kullanır.</summary>
+    public static int OzellikSayisi(int bolum, int kaydirma) =>
+        Mathf.Clamp(Bolum(bolum).ozellikSayisi + Mathf.Clamp(kaydirma, UyumEnAz, UyumEnCok), 1, 5);
+
+    /// <summary>Doğru/yanlış sonrası yeni kaydırma: üst üste doğruda artar, her hatada düşer.</summary>
+    public static int KaydirmayiGuncelle(int kaydirma, ref int ustusteDogru, bool dogru)
+    {
+        if (!dogru)
+        {
+            ustusteDogru = 0;
+            return Mathf.Max(kaydirma - 1, UyumEnAz);
+        }
+
+        ustusteDogru++;
+        if (ustusteDogru < UyumEsigi) return kaydirma;
+        ustusteDogru = 0;
+        return Mathf.Min(kaydirma + 1, UyumEnCok);
+    }
+
     // --- üretim ---
 
     /// <summary>Bölüme uygun aktif özellikleri seçer. Dönme aktifse şekil sabit üçgene çekilir
     /// (dönmenin görülebilmesi için), böylece soru okunur kalır.</summary>
-    public static Ozellik[] AktifOzellikler(int bolum)
+    public static Ozellik[] AktifOzellikler(int bolum, int kaydirma = 0)
     {
         var havuz = new List<Ozellik> { Ozellik.Renk, Ozellik.Sekil, Ozellik.Boyut, Ozellik.Adet, Ozellik.Donme };
-        var ayar = Bolum(bolum);
 
         // Karıştır
         for (int i = havuz.Count - 1; i > 0; i--)
@@ -160,7 +202,7 @@ public static class OruntuAyar
             (havuz[i], havuz[j]) = (havuz[j], havuz[i]);
         }
 
-        var secili = havuz.GetRange(0, Mathf.Min(ayar.ozellikSayisi, havuz.Count));
+        var secili = havuz.GetRange(0, Mathf.Min(OzellikSayisi(bolum, kaydirma), havuz.Count));
         return secili.ToArray();
     }
 
@@ -237,6 +279,64 @@ public static class OruntuAyar
         donme = kurallar[Ozellik.Donme].Deger(sira),
         adet = kurallar[Ozellik.Adet].Deger(sira)
     };
+
+    // --- tam soru ---
+
+    /// <summary>Ekrana ya da kâğıda basılmaya hazır tek soru.</summary>
+    public struct Soru
+    {
+        public Oge[] dizi;
+        public int gizli;             // dizide eksik olan karonun sırası
+        public Oge[] secenekler;
+        public int dogru;             // seçenekler içinde doğrunun sırası
+        public Ozellik[] aktif;
+        public Dictionary<Ozellik, Kural> kurallar;
+
+        public string Aciklama => KuralAciklamasi(kurallar, aktif);
+    }
+
+    /// <summary>
+    /// Bölüme uygun bir soru üretir. Emniyet: seçeneklerden ikisi ekranda aynı görünüyorsa ya da
+    /// dizi hiç değişmiyorsa soru çözülemez demektir — yeniden denenir. Oyun, testler ve
+    /// çalışma kâğıdı aynı yoldan geçsin diye tek yerde.
+    /// </summary>
+    public static Soru SoruUret(int bolum, int kaydirma = 0, Ozellik? odak = null)
+    {
+        var ayar = Bolum(bolum);
+        var s = new Soru();
+        List<Oge> liste = null;
+        Oge dogru = default;
+
+        for (int deneme = 0; deneme < 12; deneme++)
+        {
+            s.aktif = odak.HasValue ? new[] { odak.Value } : AktifOzellikler(bolum, kaydirma);
+            s.kurallar = KurallariUret(s.aktif);
+
+            s.dizi = new Oge[ayar.diziUzunlugu];
+            for (int i = 0; i < s.dizi.Length; i++) s.dizi[i] = OgeUret(s.kurallar, i);
+
+            s.gizli = ayar.ortadanSor && !odak.HasValue
+                ? Random.Range(1, s.dizi.Length - 1)
+                : s.dizi.Length - 1;
+
+            dogru = s.dizi[s.gizli];
+            var onceki = s.dizi[Mathf.Max(0, s.gizli - 1)];
+            liste = new List<Oge>(Celdiriciler(dogru, onceki, s.aktif, ayar.inceCeldirici, s.kurallar)) { dogru };
+
+            bool diziDegisiyor = !AyirtEdilemezVar(new[] { s.dizi[0], s.dizi[1] });
+            if (!AyirtEdilemezVar(liste) && diziDegisiyor) break;
+        }
+
+        for (int i = liste.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (liste[i], liste[j]) = (liste[j], liste[i]);
+        }
+
+        s.secenekler = liste.ToArray();
+        s.dogru = System.Array.FindIndex(s.secenekler, x => x.Ayni(dogru));
+        return s;
+    }
 
     /// <summary>
     /// Çeldiriciler: rastgele değil, "az kalsın doğru" olacak şekilde üretilir —
@@ -321,16 +421,18 @@ public static class OruntuAyar
         return string.Join("   ·   ", parcalar);
     }
 
+    public static string Ad(Ozellik o) => o switch
+    {
+        Ozellik.Sekil => "şekil",
+        Ozellik.Renk => "renk",
+        Ozellik.Boyut => "boyut",
+        Ozellik.Donme => "dönme",
+        _ => "adet"
+    };
+
     static string Anlat(Ozellik o, Kural k)
     {
-        string ad = o switch
-        {
-            Ozellik.Sekil => "şekil",
-            Ozellik.Renk => "renk",
-            Ozellik.Boyut => "boyut",
-            Ozellik.Donme => "dönme",
-            _ => "adet"
-        };
+        string ad = Ad(o);
 
         // Not: harita varsa baslangic/ikinci ham sıra numarasıdır, gerçek değeri Deger(sira) verir.
         if (k.tip == KuralTipi.Alternatif)
@@ -346,12 +448,35 @@ public static class OruntuAyar
         return $"{ad}: sırayla bir {yon} ({Deger(o, k.Deger(0))} → {Deger(o, k.Deger(1))} → {Deger(o, k.Deger(2))})";
     }
 
-    static string Deger(Ozellik o, int v) => o switch
+    public static string Deger(Ozellik o, int v) => o switch
     {
         Ozellik.Sekil => SekilAdi[Mathf.Clamp(v, 0, SekilAdet - 1)],
         Ozellik.Renk => RenkAdi[Mathf.Clamp(v, 0, RenkAdet - 1)],
         Ozellik.Boyut => BoyutAdi[Mathf.Clamp(v, 0, BoyutAdet - 1)],
         Ozellik.Adet => (v + 1).ToString(),
-        _ => v.ToString()
+        _ => (v * 45) + "°"
     };
+
+    // --- "neden yanlış?" ---
+
+    /// <summary>İki karonun ekranda ayrıldığı özellikler (ham değil, görünen değere göre).</summary>
+    public static List<Ozellik> Farklar(Oge secilen, Oge dogru)
+    {
+        var liste = new List<Ozellik>();
+        foreach (Ozellik o in System.Enum.GetValues(typeof(Ozellik)))
+            if (GorunenDeger(o, secilen) != GorunenDeger(o, dogru)) liste.Add(o);
+        return liste;
+    }
+
+    /// <summary>
+    /// "renk: sarı yerine mor" — yanlış seçimin nerede saptığı. Kuralın tamamını tekrar
+    /// anlatmak yerine öğrencinin kendi hatasını gösterir; yanlıştan öğrenme kısmı burası.
+    /// </summary>
+    public static string FarkAciklamasi(Oge secilen, Oge dogru)
+    {
+        var parcalar = new List<string>();
+        foreach (var o in Farklar(secilen, dogru))
+            parcalar.Add($"{Ad(o)}: {Deger(o, secilen[o])} yerine {Deger(o, dogru[o])}");
+        return string.Join("   ·   ", parcalar);
+    }
 }

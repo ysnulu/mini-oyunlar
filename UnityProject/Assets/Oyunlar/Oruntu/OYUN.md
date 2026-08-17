@@ -5,6 +5,7 @@ dört seçenekten doğrusunu seçer. Karoların beş özelliği var: **şekil, r
 Her soruda bunların bir kısmı bir kurala göre değişir (sırayla ilerleme, dönüşümlü, sabit).
 
 **Kontroller:** 1-4 tuşları veya seçeneğe dokunma · seçim tahtasında 1-9 bölüm seçer ·
+**Q / Backspace** ya da sol üstteki "Tahta" düğmesi bölümü bırakıp seçim tahtasına döner ·
 Esc duraklat · R oturumu yeniden başlatır
 
 ## Sınıf sürümü
@@ -31,23 +32,52 @@ Açılan bölüm ve yıldızlar kaydedilir; bölüm bitince (başarılı ya da d
 | 9-10 | 3 | 6 karo | **ortada** | ince |
 | 11-12 | 4 | 6 karo | **ortada** | ince |
 
+Bu tablo **tabandır**; bölüm içinde zorluk öğrenciye uyar (`OruntuAyar.KaydirmayiGuncelle`):
+üst üste 2 doğruda değişen özellik sayısı bir artar, her hatada bir azalır. Sapma tabanın
+bir üstü/bir altıyla sınırlı, yani bölüm kimliğini kaybetmez. Ekranda yalnızca "zorluk: yüksek /
+düşük" yazar — kaç özellik değiştiğini söylemek soruyu ele verirdi. Öğretmen modunda kapalı.
+
+## Çalışma kâğıdı
+
+Aynı kural motorundan yazdırılabilir kâğıt üretilir — sorular oyundakiyle aynı üretimden
+(`OruntuAyar.SoruUret`) geçer, ikinci bir kural motoru yok:
+
+```
+.\tools\oruntu-kagit.ps1 -Bolum 7 -Soru 16          # HTML üretir ve tarayıcıda açar
+.\tools\oruntu-kagit.ps1 -Renksiz                   # siyah-beyaz baskı: renk özelliği kullanılmaz
+.\tools\oruntu-kagit.ps1 -Tohum 42                  # aynı tohum aynı kâğıdı verir (sınıfa dağıtılan nüsha)
+```
+
+Çıktı `kagitlar\` altına HTML olarak yazılır (şekiller SVG), tarayıcıdan Ctrl+P ile A4'e ya da
+PDF'e basılır. Cevap anahtarı ayrı sayfada, her sorunun kuralı yazılı. Unity Editor açıkken
+komut yerine `Ulu > Örüntü — Çalışma Kâğıdı` menüsü kullanılır.
+
+Siyah-beyaz baskıda mor/mavi/pembe aynı griye düştüğü için `-Renksiz` bayrağı rengin değişmediği
+sorular seçer; renkli baskıda gerek yok.
+
 ## Eğitsel tasarım notları
 
 - Çeldiriciler rastgele değil: biri genellikle **bir önceki karonun** değerini taşır (ileri
   seviyede), diğerleri tek adım kayar. "Gözüne hoş geleni seç" işe yaramaz.
 - Her cevaptan sonra kural yazıyla açıklanır ("renk: sırayla bir ileri (mavi → mor → pembe)").
-  Yanlışta 2.6 sn, doğruda 1.1 sn ekranda kalır.
+  Doğruda 1.1 sn, yanlışta 3.2 sn ekranda kalır.
+- **Yanlışta "neden yanlış?":** seçilen karonun altına uymayan özelliklerin adı yazılır
+  ("renk uymuyor"), doğrunun altına "doğrusu", alt satırda da sapmanın kendisi
+  ("Seçtiğin: renk sarı yerine mor"). Kuralı tekrar okumak yerine öğrenci kendi hatasını görür.
+  Karşılaştırma ham değerle değil **görünen** değerle yapılır (`OruntuAyar.Farklar`), yoksa
+  "dönme uymuyor" diyip ekranda hiçbir fark göstermeyen bir açıklama çıkabilirdi.
 - **Çözülebilirlik güvencesi:** bir karonun ekranda göründüğü hâli özetleyen "görsel anahtar"
   var (dönme, şeklin simetrisine göre sadeleşir: kare 90°'de kendine eşit, daire/halka her açıda).
   Çeldiriciler bu anahtarla karşılaştırılır, yani ekranda aynı görünen iki seçenek üretilemez.
   Dönme aktifken şekil yalnızca üçgen ↔ yıldız arasında hareket eder.
-- Bu güvenceler `Assets/Testler/OruntuTestleri.cs` içinde 12 bölüm × 80 rastgele soru üzerinde
-  test edilir — bu hata sınıfını elle yakalamak zor.
+- Bu güvenceler `Assets/Testler/OruntuTestleri.cs` içinde binlerce rastgele soru üzerinde
+  test edilir (81 test) — bu hata sınıfını elle yakalamak zor. Zorluk kaydırmalı üretim de
+  aynı testten geçer, yani uyarlanır zorluk çözülemez soru üretemez.
 
-**Durum:** sınıf sürümü
+**Durum:** sınıf sürümü — açık iş yok
 
-**Açık işler:**
-- [ ] "Neden yanlış?" — seçilen karonun hangi özelliğinin uymadığını ekranda vurgulama
-- [ ] Uyarlanır zorluk: üst üste doğruda özellik sayısını artır, hatada düşür
-- [ ] Aynı kural motorundan yazdırılabilir çalışma kâğıdı (PNG/PDF)
-- [ ] Bölüm ortasında tahtaya dönme tuşu (şu an bölüm bitene kadar çıkılmıyor)
+**Sonraki adımlar için fikirler:**
+- [ ] Oturum raporu: bölüm sonundaki dökümü öğretmenin kaydedebileceği bir özet ekrana toplama
+- [ ] Kâğıt üzerinde iki sütunlu düzen (bir sayfaya daha çok soru)
+- [ ] Öğretmen modunda çeldiriciler de tek özellikle sınırlansın (şu an dar özellik uzayında
+      renk üzerinden tamamlanıyor)

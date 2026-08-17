@@ -40,6 +40,7 @@ Unity **6000.5.2f1**, 2D URP. Editor yolu: `C:\Program Files\unity\6000.5.2f1\Ed
 | `.\tools\web-derle.ps1 -Oyun Ad` | WebGL derlemesi → `docs\<slug>\` |
 | `.\tools\dene.ps1 -Oyun Ad [-Derle]` | Yerelde tarayıcıda açar (python http.server) |
 | `.\tools\yayinla.ps1 -Oyun Ad -Aciklama "..." -Mesaj "..."` | Derle → galeriye ekle → commit → push |
+| `.\tools\oruntu-kagit.ps1 [-Bolum N -Soru N -Renksiz]` | Örüntü'den yazdırılabilir çalışma kâğıdı (`kagitlar\*.html`) |
 
 **Editor açıkken batchmode çalışmaz** (proje kilidi). İki mod:
 - **Editor açık:** yalnızca `.cs` yaz; Unity kendi derler, Yasin Play'e basar. Hataları
