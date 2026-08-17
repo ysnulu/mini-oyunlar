@@ -66,6 +66,13 @@ namespace Ulu
 
         public static bool BasiliMi => Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space);
 
+        /// <summary>1-9 arası sayı tuşları (üst sıra veya sayısal tuş takımı).</summary>
+        public static bool SayiBasildi(int n)
+        {
+            if (Tuketildi || n < 1 || n > 9) return false;
+            return Input.GetKeyDown(KeyCode.Alpha0 + n) || Input.GetKeyDown(KeyCode.Keypad0 + n);
+        }
+
         // --- konum ---
         public static Vector2 EkranNoktasi => Input.mousePosition;
 

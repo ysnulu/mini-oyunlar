@@ -8,6 +8,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Oyunlar/Kacis/Kacis.unity
     guid: cef70371777cb67459561e3ca4423ea4
+  - enabled: 1
+    path: Assets/Oyunlar/Oruntu/Oruntu.unity
+    guid: 2a24a0756d87bd847a27138438a5d42a
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

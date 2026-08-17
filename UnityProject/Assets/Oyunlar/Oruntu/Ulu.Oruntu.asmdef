@@ -1,0 +1,17 @@
+{
+    "name": "Ulu.Oruntu",
+    "rootNamespace": "",
+    "references": [
+        "Ulu.Ortak",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

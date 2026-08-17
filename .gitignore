@@ -27,6 +27,7 @@ UnityProject/Assets/Resources.meta
 
 # tools ciktilari
 tools/son-log.txt
+tools/son-durum.txt
 tools/test-sonuc.xml
 tools/*.log
 

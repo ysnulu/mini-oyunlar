@@ -48,6 +48,9 @@ namespace Ulu
         protected float EkranYariEn => Kam.orthographicSize * Kam.aspect;
         protected float EkranYariBoy => Kam.orthographicSize;
 
+        /// <summary>Oyunun kendi yazı/panellerini ekleyebilmesi için ortak kanvas.</summary>
+        protected Canvas Ekran => kanvas;
+
         Canvas kanvas;
         Text skorYazi, enIyiYazi, durumYazi, baslikYazi, altYazi;
         Image perde;

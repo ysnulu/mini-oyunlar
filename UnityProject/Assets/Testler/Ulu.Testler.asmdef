@@ -3,6 +3,7 @@
     "rootNamespace": "Ulu.Testler",
     "references": [
         "Ulu.Ortak",
+        "Ulu.Oruntu",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

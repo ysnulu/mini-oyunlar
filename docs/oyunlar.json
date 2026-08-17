@@ -4,5 +4,11 @@
     "ad": "Kaçış",
     "aciklama": "3 şeritli sonsuz kaçış — engellerden kaç, yıldızları topla",
     "guncelleme": "2026-08-17"
+  },
+  {
+    "slug": "oruntu",
+    "ad": "Örüntü",
+    "aciklama": "Karo dizisindeki kuralı çöz, eksik karoyu bul — 12 bölüm + öğretmen modu",
+    "guncelleme": "2026-08-17"
   }
 ]
