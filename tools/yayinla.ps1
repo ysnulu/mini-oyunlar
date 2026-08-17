@@ -3,6 +3,7 @@
 #   .\tools\yayinla.ps1 -Oyun Kacis -DerlemeyiAtla     (mevcut derlemeyi yayinla)
 param(
     [Parameter(Mandatory = $true)][string]$Oyun,
+    [string]$Ad = "",          # galeride gorunen ad (Turkce); bos ise klasor adi kullanilir
     [string]$Aciklama = "",
     [string]$Mesaj = "",
     [switch]$DerlemeyiAtla,
@@ -30,14 +31,22 @@ if (-not (Test-Path (Join-Path $ciktiDizin "index.html"))) {
 $nojekyll = Join-Path $kok "docs\.nojekyll"
 if (-not (Test-Path $nojekyll)) { New-Item -ItemType File -Path $nojekyll | Out-Null }
 
-$galeri = Galeriye-Yaz -kok $kok -oyun $Oyun -slug $slug -aciklama $Aciklama
+if (-not $Ad) { $Ad = $Oyun }
+$galeri = Galeriye-Yaz -kok $kok -oyun $Ad -slug $slug -aciklama $Aciklama
 Write-Host "Galeri guncellendi: $galeri" -ForegroundColor Cyan
 
 if (-not $Mesaj) { $Mesaj = "$Oyun yayinlandi" }
 
 Push-Location $kok
 try {
+    # Yeni derleme dosyalarini virus tarayicisi bir an kilitleyebiliyor; bir kez daha dene.
     git add -A
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "git add takildi (dosya kilidi olabilir), tekrar deneniyor..." -ForegroundColor Yellow
+        Start-Sleep -Seconds 5
+        git add -A
+        if ($LASTEXITCODE -ne 0) { throw "git add basarisiz" }
+    }
     $degisiklik = git status --porcelain
     if (-not $degisiklik) {
         Write-Host "Degisiklik yok, commit atlandi." -ForegroundColor Yellow
